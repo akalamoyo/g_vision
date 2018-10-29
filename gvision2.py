@@ -12,8 +12,9 @@ import re
 import datetime
 import dateutil
 import pandas as pd
+from geotext import GeoText
+api = "INPUT API KEY HERE"
 
-api = "AIzaSyDTq4cci16u92_lonCb5CA2oBhYvWagc3I"
 def detect_text(image_file, access_token=None):
 
     with open(image_file, 'rb') as image:
@@ -55,7 +56,7 @@ def extract_entities(text, access_token=None):
 
 def extract_required_entities(text, access_token=None):
     entities = extract_entities(text, access_token)
-    required_entities = {'ORGANIZATION': '', 'PERSON': '', 'LOCATION': '', 'DATE': ''}
+    required_entities = {'LOCATION': ''}
     for entity in entities['entities']:
         t = entity['type']
         if t in required_entities:
@@ -68,9 +69,14 @@ def getdate(txt):
     now = now.date()
     filepath = txt
     datepattern = '%d.%m.%Y'
+    datepattern2 = '%b %y'
 #    with open(filepath, 'r') as f:
 #    	file = f.read()
     x = re.findall('\d\d.\d\d.\d\d\d\d', filepath)
+    x2 = re.findall('\S\S\S \d\d', filepath)
+    if not x:
+        x = x2
+        datepattern = datepattern2
     y = []
     for item in x:
         try:
@@ -79,42 +85,69 @@ def getdate(txt):
             age = dateutil.relativedelta.relativedelta(now,date)
             age = age.years
             y.append(age)    	
-        except:
+        except ValueError:
             pass
     for item in y:
         if item >15:
             return item
     return item
+      
+mytxt1 = detect_text(/pics/british.png',api)
+#mytxt1 = detect_text('/pics/british.png',api)
+#mytxt1
+#mytxt2 = detect_text('/pics/Intl.jpg',api)
+mytxt3 = detect_text('/pics/driver.jpg',api)
+mytxt4 = detect_text('/pics/bpass1.jpg',api)
+mytxt5 = detect_text('/pics/bpass3.jpg',api)
+mytxt6 = detect_text('/pics/bpass6.jpg',api)
+mytxt7 = detect_text('/pics/bpass5.jpg',api)
+mytxt8 = detect_text('/pics/bpass2.jpg',api)
 
-def getdate2(txt):
-    filepath = txt
-    datepattern = '%b %y'
-#    with open(filepath, 'r') as f:
-#    	file = f.read()
-    x = re.findall('\S\S\S \d\d', filepath)
-    y = []
-    for item in x:
-        try:
-            date = datetime.datetime.strptime(item, datepattern)
-            date = date.date()
-            age = dateutil.relativedelta.relativedelta(now,date)
-            age = age.years
-            y.append(age)
-        except:
-            pass
-    for item in y:
-        if item > 15:
-            return item
-    return item
+#
+#
+#spl5 = mytxt5.replace(" ", ".")
+#spl6 = mytxt6.replace(" ", ".")
+#spl7 = mytxt7.replace(" ", " ")
+#places5 = GeoText(spl5)
+#places6 = GeoText(spl6)
+#places7 = GeoText(spl7)
+#places7.cities
 
-mytxt1 = detect_text("bpass1.jpg", api)
-mytxt2 = detect_text("bpass2.jpg", api)
-mytxt3 = detect_text("bpass3.jpg", api)
-mytxt4 = detect_text("bpass4.jpg", api)
-mytxt5 = detect_text("bpass5.jpg", api)
-mytxt6 = detect_text("bpass6.jpg", api)
-travel = pd.read_csv("city_abbreviation.csv", sep = ",", encoding = "ISO-8859-1")
-travel2 = travel[:,1]
-travel3 = list(travel2)
-#spl1 = mytxt1.replace("\n", ".")
-from geotext import GeoText
+
+cities = pd.read_csv("cities.txt", sep = "\t", encoding = 'ISO-8859-1')
+cities = cities[['Cities','Countries','Abbr']]
+cities_names = cities.iloc[:,0]
+cities_abbr = cities.iloc[:,2]
+cities_names = list(cities_names)
+cities_abbr = list(cities_abbr)
+
+def extract_location(text):
+    i = 0
+    location = []
+    mytxt = text
+    mytxt = mytxt.splitlines()
+    list2 = set(mytxt)&set(cities_abbr)
+    list3 = set(mytxt)&set(cities_names)
+    list4 = sorted(list3, key = lambda k : mytxt.index(k))
+    if not list4:
+        list4 = sorted(list2, key = lambda k: mytxt.index(k))
+        for i in [0,1]:
+            loca = (cities[cities['Abbr'] == list4[i]])
+            location.append(loca)
+    return location
+
+def extract_location2(text):
+    i = 0
+    location = []
+    text = text.replace(" ", "\n")
+    text = text.replace(" → ", "\n")
+    mylist = text.splitlines()
+    list2 = set(mylist)&set(cities_abbr)
+    list4 = sorted(list2, key = lambda k: mylist.index(k))
+    for i in [0,1]:
+        loca = (cities[cities['Abbr'] == list4[i]])
+        location.append(loca)
+    return location
+
+extract_location2(mytxt3)
+getdate(mytxt3)
